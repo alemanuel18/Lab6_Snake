@@ -98,7 +98,7 @@ export default function App() {
 
         if (newHead.x === food.x && newHead.y === food.y) {
           setScore((prev) => prev + 10);
-          setSpeed((prev) => Math.max(MIN_SPEED, prev - 2)); 
+          setSpeed((prev) => Math.max(MIN_SPEED, prev - 2));
           setTimeout(() => generateNewFood(newSnake), 0);
         } else {
           newSnake.pop();
@@ -115,10 +115,10 @@ export default function App() {
   return (
     <div className="game-container">
       <div className="header">
-        <h1>Neon Snake</h1>
+        <h1>Snake</h1>
         <Score points={score} />
       </div>
-      
+
       <div className="board-container">
         {!gameStarted && !gameOver && (
           <div className="overlay">

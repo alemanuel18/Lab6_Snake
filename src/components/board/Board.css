@@ -2,36 +2,33 @@
     display: grid;
     width: min(80vw, 400px);
     height: min(80vw, 400px);
-    background-color: #12151c;
+    background-color: #f4f4f4;
     border-radius: 8px;
     gap: 1px;
 }
 
 .cell {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: #ffffff;
     border-radius: 2px;
     transition: background-color 0.1s;
 }
 
 .snake-cell {
-    background-color: #00f2fe;
-    box-shadow: 0 0 10px #00f2fe, inset 0 0 5px rgba(255,255,255,0.5);
+    background-color: #a8d5e2;
     border-radius: 4px;
 }
 
 .snake-head {
-    background-color: #fff;
-    box-shadow: 0 0 15px #fff;
+    background-color: #8bbccc;
 }
 
 .food-cell {
-    background-color: #f5576c;
+    background-color: #ffb7b2;
     border-radius: 50%;
-    box-shadow: 0 0 15px #f5576c;
     animation: pulse 1s infinite alternate;
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.85); box-shadow: 0 0 5px #f5576c; }
-    100% { transform: scale(1.1); box-shadow: 0 0 15px #f5576c; }
+    0% { transform: scale(0.85); }
+    100% { transform: scale(1.1); }
 }
