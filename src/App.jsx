@@ -1,95 +1,22 @@
-import { useState, useEffect } from 'react';
-import Board from './Board';
-import Score from './Score';
+import { useState, useEffect, useCallback } from 'react';
+import Board from './components/board/Board';
+import Score from './components/score/Score';
+import './App.css';
 
-// Definimos constantes para el tamaño del tablero y direcciones
 const BOARD_SIZE = 20;
-const INITIAL_SPEED = 200;
+const INITIAL_SPEED = 150;
+const MIN_SPEED = 50;
 
-export default function Game() {
-  // 1. ESTADOS DEL JUEGO
-  // La serpiente es un array de objetos [{x, y}]. La cabeza es el índice 0.
+export default function App() {
   const [snake, setSnake] = useState([{ x: 10, y: 10 }, { x: 10, y: 11 }]);
   const [food, setFood] = useState({ x: 5, y: 5 });
-  const [direction, setDirection] = useState({ x: 0, y: -1 }); // Moviéndose hacia arriba por defecto
+  const [direction, setDirection] = useState({ x: 0, y: -1 });
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [speed, setSpeed] = useState(INITIAL_SPEED);
 
-  // 2. ESCUCHAR EL TECLADO (Cambiar dirección)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      switch (e.key) {
-        case 'ArrowUp':
-          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
-          break;
-        case 'ArrowDown':
-          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
-          break;
-        case 'ArrowLeft':
-          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
-          break;
-        case 'ArrowRight':
-          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
-          break;
-        default:
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [direction]);
-
-  // 3. GAME LOOP (El movimiento automático)
-  useEffect(() => {
-    if (gameOver) return;
-
-    const moveSnake = () => {
-      setSnake((prevSnake) => {
-        // Calcular la nueva posición de la cabeza sumando la dirección actual
-        const newHead = {
-          x: prevSnake[0].x + direction.x,
-          y: prevSnake[0].y + direction.y
-        };
-
-        // DETECCIÓN DE COLISIONES (Paredes)
-        if (
-          newHead.x < 0 || newHead.x >= BOARD_SIZE ||
-          newHead.y < 0 || newHead.y >= BOARD_SIZE
-        ) {
-          setGameOver(true);
-          return prevSnake;
-        }
-
-        // DETECCIÓN DE COLISIONES (Consigo misma)
-        for (let segment of prevSnake) {
-          if (newHead.x === segment.x && newHead.y === segment.y) {
-            setGameOver(true);
-            return prevSnake;
-          }
-        }
-
-        // Crear el nuevo cuerpo de la serpiente
-        const newSnake = [newHead, ...prevSnake];
-
-        // DETECCIÓN DE COMIDA
-        if (newHead.x === food.x && newHead.y === food.y) {
-          setScore((prev) => prev + 10);
-          generateNewFood(newSnake);
-        } else {
-          newSnake.pop();
-        }
-
-        return newSnake;
-      });
-    };
-
-    const interval = setInterval(moveSnake, INITIAL_SPEED);
-    return () => clearInterval(interval);
-  }, [direction, food, gameOver]);
-
-  const generateNewFood = (currentSnake) => {
-    // Lógica para generar {x, y} aleatorios que no colisionen con currentSnake
+  const generateNewFood = useCallback((currentSnake) => {
     let newFood;
     while (!newFood || currentSnake.some(s => s.x === newFood.x && s.y === newFood.y)) {
       newFood = {
@@ -98,16 +25,119 @@ export default function Game() {
       };
     }
     setFood(newFood);
+  }, []);
+
+  const resetGame = () => {
+    setSnake([{ x: 10, y: 10 }, { x: 10, y: 11 }]);
+    setDirection({ x: 0, y: -1 });
+    setScore(0);
+    setGameOver(false);
+    setGameStarted(true);
+    setSpeed(INITIAL_SPEED);
+    generateNewFood([{ x: 10, y: 10 }, { x: 10, y: 11 }]);
   };
+
+  const startGame = () => {
+    resetGame();
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      setDirection((prevDir) => {
+        switch (e.key) {
+          case 'ArrowUp':
+            return prevDir.y !== 1 ? { x: 0, y: -1 } : prevDir;
+          case 'ArrowDown':
+            return prevDir.y !== -1 ? { x: 0, y: 1 } : prevDir;
+          case 'ArrowLeft':
+            return prevDir.x !== 1 ? { x: -1, y: 0 } : prevDir;
+          case 'ArrowRight':
+            return prevDir.x !== -1 ? { x: 1, y: 0 } : prevDir;
+          default:
+            return prevDir;
+        }
+      });
+    };
+
+    if (gameStarted && !gameOver) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameStarted, gameOver]);
+
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const moveSnake = () => {
+      setSnake((prevSnake) => {
+        const newHead = {
+          x: prevSnake[0].x + direction.x,
+          y: prevSnake[0].y + direction.y
+        };
+
+        if (
+          newHead.x < 0 || newHead.x >= BOARD_SIZE ||
+          newHead.y < 0 || newHead.y >= BOARD_SIZE
+        ) {
+          setGameOver(true);
+          return prevSnake;
+        }
+
+        for (let segment of prevSnake) {
+          if (newHead.x === segment.x && newHead.y === segment.y) {
+            setGameOver(true);
+            return prevSnake;
+          }
+        }
+
+        const newSnake = [newHead, ...prevSnake];
+
+        if (newHead.x === food.x && newHead.y === food.y) {
+          setScore((prev) => prev + 10);
+          setSpeed((prev) => Math.max(MIN_SPEED, prev - 2)); 
+          setTimeout(() => generateNewFood(newSnake), 0);
+        } else {
+          newSnake.pop();
+        }
+
+        return newSnake;
+      });
+    };
+
+    const interval = setInterval(moveSnake, speed);
+    return () => clearInterval(interval);
+  }, [direction, food, gameOver, gameStarted, speed, generateNewFood]);
 
   return (
     <div className="game-container">
-      <Score points={score} />
-      {gameOver ? (
-        <div className="game-over">¡Game Over!</div>
-      ) : (
+      <div className="header">
+        <h1>Neon Snake</h1>
+        <Score points={score} />
+      </div>
+      
+      <div className="board-container">
+        {!gameStarted && !gameOver && (
+          <div className="overlay">
+            <h2>Bienvenido a Snake</h2>
+            <p>Usa las flechas del teclado para moverte.</p>
+            <button className="btn" onClick={startGame}>Jugar</button>
+          </div>
+        )}
+
+        {gameOver && (
+          <div className="overlay game-over-overlay">
+            <h2>¡Game Over!</h2>
+            <p>Puntaje Final: {score}</p>
+            <button className="btn" onClick={resetGame}>Volver a Jugar</button>
+          </div>
+        )}
+
         <Board boardSize={BOARD_SIZE} snake={snake} food={food} />
-      )}
+      </div>
     </div>
   );
 }
